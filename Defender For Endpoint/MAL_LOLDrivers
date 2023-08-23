@@ -1,0 +1,25 @@
+let MaxAge = ago(30d);
+let LolDriverSHA1 =
+	(externaldata(SHA1:string)
+    [@"https://raw.githubusercontent.com/magicsword-io/LOLDrivers/main/detections/hashes/samples_malicious.sha1"]
+    with (format = "txt", ignoreFirstRecord=false)
+);
+union (
+    LolDriverSHA1
+    | join (
+        DeviceProcessEvents
+        | where Timestamp > MaxAge
+    ) on SHA1
+), (
+    LolDriverSHA1
+    | join (
+        DeviceFileEvents
+        | where Timestamp > MaxAge
+    ) on SHA1
+), (
+    LolDriverSHA1
+    | join (
+        DeviceImageLoadEvents
+        | where Timestamp > MaxAge
+    ) on SHA1
+) | project Timestamp, DeviceName, ActionType, FileName,FolderPath, SHA1, InitiatingProcessAccountName, InitiatingProcessFileName, InitiatingProcessFolderPath, InitiatingProcessSHA1, InitiatingProcessCommandLine
